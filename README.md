@@ -13,7 +13,9 @@ through LDAP.
 ## Building
 
 The project uses [ICE][] to communicate with Murmur based on code generated
-at build time. This should mostly work without intervention.
+at build time.
+
+ICE needs to be installed before you can build this project.
 
 To generate the necessary classes, compile the project and create an uberJAR
 simply run `gradle shadowJar`.
