@@ -1,0 +1,52 @@
+group 'com.tendollarbond'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'com.zeroc', name: 'ice', version: '3.6.2'
+    compile group: 'com.unboundid', name: 'unboundid-ldapsdk-minimal-edition', version: '3.1.1'
+    compile group: 'com.google.guava', name: 'guava', version: '19.0'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+// Set up slice compilation
+
+buildscript {
+    repositories {
+        maven {
+            url 'https://repo.zeroc.com/nexus/content/repositories/releases'
+        }
+    }
+    dependencies {
+        classpath group: 'com.zeroc.gradle.ice-builder', name: 'slice', version: '1.0.5'
+    }
+}
+
+apply plugin: 'slice'
+
+// Build an uberjar
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:1.2.3"
+    }
+}
+
+apply plugin: "com.github.johnrengelman.shadow"
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.tendollarbond.murmur_ldap_auth.Main'
+    }
+}
