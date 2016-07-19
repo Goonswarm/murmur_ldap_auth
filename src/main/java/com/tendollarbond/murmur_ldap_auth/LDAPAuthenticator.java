@@ -128,11 +128,11 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
                 connection.bind(userDN.get(), password);
                 return userDN;
             } catch (LDAPException e) {
-                e.printStackTrace();
                 // LDAP return code 49 means "invalid credentials"
                 if (e.getResultCode().intValue() == 49) {
                     return Optional.empty();
                 }
+                e.printStackTrace();
                 throw e;
             } finally {
                 connectionPool.releaseDefunctConnection(connection);
