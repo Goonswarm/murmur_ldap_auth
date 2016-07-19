@@ -121,12 +121,11 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
         final LDAPConnection connection = connectionPool.getConnection();
         Optional<String> userDN = findUser(connection, username);
         if (userDN.isPresent()) {
-            /* The LDAP library throws the same exception type ofr all errors and usually we would want them to
+            /* The LDAP library throws the same exception type for all errors and usually we would want them to
             * propagate up, however in this case if the exception code is 49 (invalid credentials) we need to catch it
             * so that this function works as expected. */
             try {
                 connection.bind(userDN.get(), password);
-                connectionPool.releaseDefunctConnection(connection);
                 return userDN;
             } catch (LDAPException e) {
                 e.printStackTrace();
@@ -135,6 +134,8 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
                     return Optional.empty();
                 }
                 throw e;
+            } finally {
+                connectionPool.releaseDefunctConnection(connection);
             }
         }
 
