@@ -1,19 +1,16 @@
 package com.tendollarbond.murmur_ldap_auth;
 
-import Ice.Current;
-import Ice.StringHolder;
 import Murmur.GroupNameListHolder;
-import Murmur.UserInfoMapHolder;
-import Murmur._ServerAuthenticatorDisp;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.unboundid.ldap.sdk.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -21,15 +18,12 @@ import java.util.stream.Collectors;
  *
  * User and group lookups are performed according to the specified configuration.
  *
- * Several authenticator callbacks have not been implemented as they are not strictly necessary and/or hard to implement
- * with little gain (such as reversing user hashes).
- *
  * Refer to the project documentation for more information.
  */
-public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
+public class LDAPAuthenticator  {
     private final LDAPConnectionPool connectionPool;
     private final LDAPConfiguration config;
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final int MURMUR_AUTH_FAILURE = -1;
     // private final int MURMUR_AUTH_FALLTHROUGH = -2;
@@ -42,7 +36,7 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
         /** The base DN under which user objects are located. Search scope for users is subtree by default. */
         final public String userBase;
 
-        /** The attribute in which the username is stored. */
+        /** The attribute in which the session is stored. */
         final public String usernameAttribute;
 
         /** The filter by which to restrict user searches. */
@@ -89,14 +83,12 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
 
     /** Main authentication function. Returns either -1 for authentication failure, -2 for unknown user (fall through)
      * or the user ID. See the slice definition for more information. */
-    @Override
-    public int authenticate(String name, String pw, byte[][] certificates, String certhash, boolean certstrong,
-                            StringHolder newname, GroupNameListHolder groupHolder, Current __current) {
-        logger.info("Attempting to authenticate user " + name);
+    public int authenticate(String name, String pw, GroupNameListHolder groupHolder) {
+        logger.info("Attempting to authenticate user {}",  name);
         try {
             final Optional<String> userDN = authenticateUser(name, pw);
             if (userDN.isPresent()) {
-                logger.info("Successful login from user " + name);
+                logger.info("Successful login from user {}", name);
 
                 /* Holder classes are used by Ice for additional out parameters, modifying the value of the groupHolder
                  * will cause the groups we retrieve from LDAP to be set on the user. */
@@ -105,12 +97,11 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
 
                 return usernameToId(name);
             } else {
-                logger.info("Invalid credentials from user " + name);
+                logger.info("Invalid LDAP credentials from user {}", name);
                 return MURMUR_AUTH_FAILURE;
             }
         } catch (LDAPException e) {
-            logger.warning("An error occured while authenticating " + name);
-            e.printStackTrace();
+            logger.error("An error occured while authenticating {}: {}", name, e);
             return MURMUR_AUTH_FAILURE;
         }
     }
@@ -145,7 +136,7 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
     /** Attempt to find a user using the configured search filter. The DN of the returned user will be used for binding.
      * TODO: Currently this only works if the directory server lets you search through users anonymously. */
     private Optional<String> findUser(final LDAPConnection connection, final String username) throws LDAPException {
-        /* Create a filter with the user supplied information and a check for the username in the supplied attribute. */
+        /* Create a filter with the user supplied information and a check for the session in the supplied attribute. */
         final Filter usernameFilter = Filter.createEqualityFilter(config.usernameAttribute, username);
         final Filter userSuppliedFilter = Filter.create(config.userFilter);
         final Filter filter = Filter.createANDFilter(usernameFilter, userSuppliedFilter);
@@ -178,34 +169,13 @@ public class LDAPAuthenticator extends _ServerAuthenticatorDisp {
         return groups;
     }
 
+    /* Helper functions */
 
-    /* Create a user ID by hashing the username and taking some of the hash. This should be good enough for most
-    * cases. */
-    private static int usernameToId(final String username) {
+    /** Create a user ID by hashing the session and taking some of the hash. This should be good enough for most
+     * cases. */
+    public static int usernameToId(final String username) {
         final HashFunction hashFunction = Hashing.sha1();
         final int hashed = Math.abs(hashFunction.hashString(username, Charset.defaultCharset()).asInt());
         return hashed;
-    }
-
-    @Override
-    public int nameToId(String name, Current __current) {
-        return usernameToId(name);
-    }
-
-    /* Unused callbacks */
-
-    @Override
-    public boolean getInfo(int id, UserInfoMapHolder info, Current __current) {
-        return false;
-    }
-
-    @Override
-    public String idToName(int id, Current __current) {
-        return "";
-    }
-
-    @Override
-    public byte[] idToTexture(int id, Current __current) {
-        return new byte[0];
     }
 }
