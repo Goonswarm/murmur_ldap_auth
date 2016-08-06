@@ -2,6 +2,8 @@ package com.tendollarbond.murmur_ldap_auth;
 
 import Ice.StringHolder;
 import Murmur.GroupNameListHolder;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
@@ -17,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.tendollarbond.murmur_ldap_auth.LDAPAuthenticator.usernameToId;
 import static spark.Spark.get;
@@ -45,11 +49,15 @@ public class GuestAuthenticator implements Runnable {
         }
     }
 
-    /** A concurrent map for tracking users. */
-    final private Map<String, UserData> guestMap = new ConcurrentHashMap<>();
+    /** A concurrent, expiring cache for tracking users. */
+    final private Cache<String, UserData> guestMap = CacheBuilder.newBuilder()
+            .expireAfterWrite(4, TimeUnit.HOURS)
+            .build();
 
-    /** A concurrent map that tracks active guest links and their expiry time. */
-    final private Map<String, LocalDateTime> sessionMap = new ConcurrentHashMap<>();
+    /** A concurrent, expiring cache that tracks active guest sessions. */
+    final private Cache<String, LocalDateTime> sessionMap = CacheBuilder.newBuilder()
+            .expireAfterWrite(4, TimeUnit.HOURS)
+            .build();
 
     @Override
     public void run() {
@@ -94,11 +102,11 @@ public class GuestAuthenticator implements Runnable {
         final String username = request.queryParams("username");
 
         // Check for duplicate usernames and session expiry before letting a user in.
-        if (guestMap.containsKey(username)) {
+        if (guestMap.asMap().containsKey(username)) {
             logger.info("Duplicate username attempt: {}", username);
             final Map<String, String> model = ImmutableMap.of("alert", "Username already taken.", "session", session);
             return new ModelAndView(model, "visit.html");
-        } else if (sessionMap.getOrDefault(session, LocalDateTime.MAX).isAfter(LocalDateTime.now())) {
+        } else if (sessionMap.asMap().getOrDefault(session, LocalDateTime.MAX).isAfter(LocalDateTime.now())) {
             final String password = new BigInteger(130, random).toString(32).substring(0, 20);
             final String mumbleLink = String.format("mumble://%s:%s@127.0.0.1/?version=1.2.0", username, password);
             final Map<String, String> model = ImmutableMap.of(
@@ -140,9 +148,9 @@ public class GuestAuthenticator implements Runnable {
 
     /** Method to check whether user credentials are valid guest credentials. */
     private boolean authenticateGuest(String username, String password) {
-        final UserData userData = guestMap.get(username);
+        final UserData userData = guestMap.asMap().get(username);
         if ((userData != null) && (BCrypt.checkpw(password, userData.passwordHash))) {
-            final LocalDateTime sessionExpiry = sessionMap.getOrDefault(userData.session, LocalDateTime.MAX);
+            final LocalDateTime sessionExpiry = sessionMap.asMap().getOrDefault(userData.session, LocalDateTime.MAX);
             return sessionExpiry.isAfter(LocalDateTime.now());
         }
         return false;

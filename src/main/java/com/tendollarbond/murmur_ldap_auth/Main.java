@@ -1,17 +1,21 @@
 package com.tendollarbond.murmur_ldap_auth;
 
 import Ice.Communicator;
+import Ice.ConnectionRefusedException;
 import Ice.InitializationData;
 import Ice.ObjectAdapter;
 import Murmur.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+
 import static com.tendollarbond.murmur_ldap_auth.LDAPAuthenticator.LDAPConfiguration;
 
 /**
@@ -152,18 +156,17 @@ public class Main implements Runnable {
             guestAuthenticator.run();
         }
 
-        /* Downcast to Murmur's meta object for fetching virtual servers*/
-        final MetaPrx prx = MetaPrxHelper.checkedCast(obj);
-
-        /* Prepare authenticator backend */
-        final LDAPAuthenticator ldapAuthenticator = LDAPAuthenticator.setupAuthenticator(config.ldapConfiguration);
-        final MurmurAuthenticator murmurAuthenticator = new MurmurAuthenticator(ldapAuthenticator, guestAuthenticator);
-
-        /* Prepare authenticator & endpoint for calling it */
-        final ServerAuthenticatorPrx authenticatorPrx = prepareAuthenticatorProxy(murmurAuthenticator, communicator);
-
-        /* Register authenticator in all existing servers. */
+        /* Create and register authenticator in all existing servers. */
         try {
+            /* Prepare authenticator backend */
+            final LDAPAuthenticator ldapAuthenticator = LDAPAuthenticator.setupAuthenticator(config.ldapConfiguration);
+            final MurmurAuthenticator murmurAuthenticator = new MurmurAuthenticator(ldapAuthenticator, guestAuthenticator);
+
+            /* Prepare authenticator & endpoint for calling it */
+            final ServerAuthenticatorPrx authenticatorPrx = prepareAuthenticatorProxy(murmurAuthenticator, communicator);
+
+            /* Downcast to Murmur's meta object for fetching virtual servers. This establishes the connection. */
+            final MetaPrx prx = MetaPrxHelper.checkedCast(obj);
             final ServerPrx[] servers = prx.getAllServers();
             registerAuthenticator(servers, authenticatorPrx);
         } catch (InvalidSecretException e) {
@@ -173,7 +176,11 @@ public class Main implements Runnable {
             logger.error("Murmur server is not fully booted {}", e);
             System.exit(-1);
         } catch (InvalidCallbackException e) {
-            e.printStackTrace();
+            logger.error("Invalid callback implementation: {}", e);
+            System.exit(-1);
+        } catch (ConnectionRefusedException e) {
+            logger.error("Could not connect to Murmur: e", e);
+            System.exit(-1);
         }
     }
 }
