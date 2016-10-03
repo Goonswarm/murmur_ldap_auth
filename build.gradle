@@ -10,9 +10,19 @@ repositories {
 }
 
 dependencies {
+    // Main application dependencies
     compile group: 'com.zeroc', name: 'ice', version: '3.6.2'
     compile group: 'com.unboundid', name: 'unboundid-ldapsdk-minimal-edition', version: '3.1.1'
     compile group: 'com.google.guava', name: 'guava', version: '19.0'
+    compile "com.sparkjava:spark-core:2.5"
+    compile group: 'com.sparkjava', name: 'spark-template-mustache', version: '2.3'
+    compile group: 'de.svenkubiak', name: 'jBCrypt', version: '0.4.1'
+
+    // Structured logging dependencies
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
+    compile group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '4.7'
+
+    // Test dependencies
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 

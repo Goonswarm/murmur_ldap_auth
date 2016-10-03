@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<link>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content=""/>
+<meta name="author" content="Donald J. Trump"/>
+
+<title>GoonSwarm Mumble</title>
+<link rel="stylesheet" href="https://auth.tendollarbond.com/css/app.css"/>
+<link rel="icon" type="image/png" href="https://auth.tendollarbond.com/favicon.png"/>
+</head>
+
+<body>
+<div class="container">
+    <header class="header">
+        <span class="logo"></span>
+    </header>
+
+    <main role="main">
+        <p>Pressing "Please!" below will send you to a link with a publicly shareable URL that will let guests access
+            the Mumble server.</p>
+        <p>The link will be valid for one hour. Guest logins are valid for up to three hours after creation, however
+            active sessions will not be terminated automatically after they expire.</p>
+        <p>It is <strong>your responsibility</strong> to ensure that the trash you drag in is taken out again.</p>
+        <!-- <p>You must enter a tag (up to 10 characters) that the user's name will be prefixed with on Mumble.</p>-->
+
+        <form accept-charset="UTF-8" action="/mumble/guests" method="post">
+            <button type="submit" class="btn btn-default">Please!</button>
+        </form>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<link>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content=""/>
+<meta name="author" content="Donald J. Trump"/>
+
+<title>GoonSwarm Mumble</title>
+<link rel="stylesheet" href="https://auth.tendollarbond.com/css/app.css"/>
+<link rel="icon" type="image/png" href="https://auth.tendollarbond.com/favicon.png"/>
+</head>
+
+<body>
+<div class="container">
+    <header class="header">
+        <span class="logo"></span>
+    </header>
+
+    <p class="alert alert-danger" role="alert">{{alert}}</p>
+
+    <main role="main">
+        <p>Hello,</p>
+        <p>welcome to the GoonSwarm Mumble server. Some idiot has given you this link so that we may be given the
+            opportunity to listen to your annoying, squeaky voice.</p>
+        <p>For this we are deeply grateful.</p>
+        <p>Please enter your name below and press <strong>Submit</strong> <sup>1</sup>. You should keep this window open
+            until you are sure you don't need it anymore.</p>
+        <!-- <p>You must enter a tag (up to 10 characters) that the user's name will be prefixed with on Mumble.</p>-->
+
+        <form accept-charset="UTF-8" action="/mumble/visit" method="post">
+            <input type="hidden" id="session" name="session" value="{{session}}">
+            <div class="form-group">
+                <label for="username">Your stupid name:</label>
+                <input type="text" id="username" name="username" class="form-control" required="required">
+            </div>
+            <button type="submit" class="btn btn-default">Submit!</button>
+        </form>
+        <hr>
+        <sup>1: submit (səbˈmɪt) - to yield (oneself), as to the will of another person, a superior force, etc</sup>
+    </main>
+</div>
+</body>
+</html>

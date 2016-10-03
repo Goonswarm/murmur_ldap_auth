@@ -338,10 +338,10 @@ module Murmur
 	 *  deadlock the server.
 	 */
 	interface ServerAuthenticator {
-		/** Called to authenticate a user. If you do not know the username in question, always return -2 from this
+		/** Called to authenticate a user. If you do not know the session in question, always return -2 from this
 		 *  method to fall through to normal database authentication.
 		 *  Note that if authentication succeeds, murmur will create a record of the user in it's database, reserving
-		 *  the username and id so it cannot be used for normal database authentication.
+		 *  the session and id so it cannot be used for normal database authentication.
 		 *  The data in the certificate (name, email addresses etc), as well as the list of signing certificates,
 		 *  should only be trusted if certstrong is true.
 		 *
@@ -350,7 +350,7 @@ module Murmur
 		 *  @param certificates List of der encoded certificates the user connected with.
 		 *  @param certhash Hash of user certificate, as used by murmur internally when matching.
 		 *  @param certstrong True if certificate was valid and signed by a trusted CA.
-		 *  @param newname Set this to change the username from the supplied one.
+		 *  @param newname Set this to change the session from the supplied one.
 		 *  @param groups List of groups on the root channel that the user will be added to for the duration of the connection.
 		 *  @return UserID of authenticated user, -1 for authentication failures and -2 for unknown user (fallthrough).
 		 */
@@ -370,7 +370,7 @@ module Murmur
 		 */
 		idempotent int nameToId(string name);
 
-		/** Map a user id to a username.
+		/** Map a user id to a session.
 		 *  @param id User id to map.
 		 *  @return Name of user or empty string for unknown id.
 		 */
